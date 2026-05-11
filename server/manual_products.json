@@ -1,0 +1,92 @@
+[
+  {
+    "id": "m1",
+    "title": "Sonic Vibration Toothbrush",
+    "price": "$34.99",
+    "image": "https://images.unsplash.com/photo-1559594806-03f47e62093e?auto=format&fit=crop&w=400&q=80",
+    "category": "Health",
+    "affiliateUrl": "https://amazon.com",
+    "source": "manual"
+  },
+  {
+    "id": "m2",
+    "title": "Noise Cancelling Wireless Buds",
+    "price": "$89.00",
+    "image": "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=400&q=80",
+    "category": "Electronics",
+    "affiliateUrl": "https://amazon.com",
+    "source": "manual"
+  },
+  {
+    "id": "m3",
+    "title": "Smart LED Ambient Light Bar",
+    "price": "$45.50",
+    "image": "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=400&q=80",
+    "category": "Household",
+    "affiliateUrl": "https://amazon.com",
+    "source": "manual"
+  },
+  {
+    "id": "m4",
+    "title": "The 2026 Guide to Digital Nomadism",
+    "price": "$12.99",
+    "image": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80",
+    "category": "E-books",
+    "affiliateUrl": "https://clickbank.com",
+    "source": "manual"
+  },
+  {
+    "id": "m5",
+    "title": "Deep Tissue Massage Gun",
+    "price": "$59.99",
+    "image": "https://images.unsplash.com/photo-1600108682768-cfc67a07b482?auto=format&fit=crop&w=400&q=80",
+    "category": "Health",
+    "affiliateUrl": "https://amazon.com",
+    "source": "manual"
+  },
+  {
+    "id": "m6",
+    "title": "Retro Mechanical Keyboard",
+    "price": "$120.00",
+    "image": "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?auto=format&fit=crop&w=400&q=80",
+    "category": "Electronics",
+    "affiliateUrl": "https://amazon.com",
+    "source": "manual"
+  },
+  {
+    "id": "m7",
+    "title": "Air Purifier with HEPA Filter",
+    "price": "$129.00",
+    "image": "https://images.unsplash.com/photo-1585771724684-252a9e224e2c?auto=format&fit=crop&w=400&q=80",
+    "category": "Household",
+    "affiliateUrl": "https://amazon.com",
+    "source": "manual"
+  },
+  {
+    "id": "m8",
+    "title": "Mastering Crypto Investing 2026",
+    "price": "$19.99",
+    "image": "https://images.unsplash.com/photo-1621761191319-c6fb62004040?auto=format&fit=crop&w=400&q=80",
+    "category": "E-books",
+    "affiliateUrl": "https://clickbank.com",
+    "source": "manual"
+  },
+  {
+    "id": "m9",
+    "title": "Electric Gooseneck Kettle",
+    "price": "$65.00",
+    "image": "https://images.unsplash.com/photo-1594212699903-ec8a3ecc50f1?auto=format&fit=crop&w=400&q=80",
+    "category": "Household",
+    "affiliateUrl": "https://amazon.com",
+    "source": "manual"
+  },
+  {
+    "id": "m10",
+    "title": "Pro Yoga Mat - Eco Friendly",
+    "price": "$40.00",
+    "image": "https://images.unsplash.com/photo-1599447421416-3414500d18a5?auto=format&fit=crop&w=400&q=80",
+    "category": "Health",
+    "affiliateUrl": "https://amazon.com",
+    "source": "manual"
+  }
+]

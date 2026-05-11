@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -9,51 +11,115 @@ const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
-// In-memory cache to prevent hitting APIs too hard
+const MANUAL_PRODUCTS_PATH = path.join(__dirname, 'manual_products.json');
+
 let productCache = {
   lastUpdated: null,
   data: []
 };
 
-const CATEGORIES = ['Health', 'Electronics', 'Household', 'E-books'];
+/**
+ * eBay OAuth: Gets an access token using Client ID and Secret
+ */
+async function getEbayToken() {
+  const auth = Buffer.from(`${process.env.EBAY_API_KEY}:${process.env.EBAY_API_SECRET}`).toString('base64');
+  try {
+    const response = await axios.post('https://api.ebay.com/identity/v1/oauth2/token', 
+      'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope', 
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${auth}`
+        }
+      }
+    );
+    return response.data.access_token;
+  } catch (error) {
+    console.error('Error fetching eBay token:', error.response?.data || error.message);
+    return null;
+  }
+}
 
 /**
- * Automation Logic: Fetching from multiple sources
- * In a real scenario, you'd use:
- * - Amazon PA-API for Electronics/Household
- * - eBay Browse API for Electronics/Trending
- * - ClickBank API for E-books/Health
+ * eBay Browse API: Fetches real products from eBay
  */
-async function fetchTrendingProducts() {
-  console.log('Automating product fetch...');
-  
-  // Logic for switching between MOCK and LIVE data based on ENV presence
-  const hasKeys = process.env.AMAZON_API_KEY && process.env.EBAY_API_KEY;
+async function fetchEbayProducts(category) {
+  const token = await getEbayToken();
+  if (!token) return [];
 
-  if (!hasKeys) {
-    console.log('No API keys found. Operating in MOCKED automation mode.');
-    return [
-      { id: 'a1', title: 'Sonic Vibration Toothbrush', price: '$34.99', image: 'https://images.unsplash.com/photo-1559594806-03f47e62093e?auto=format&fit=crop&w=400&q=80', category: 'Health', affiliateUrl: 'https://amazon.com' },
-      { id: 'e1', title: 'Noise Cancelling Wireless Buds', price: '$89.00', image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=400&q=80', category: 'Electronics', affiliateUrl: 'https://amazon.com' },
-      { id: 'h1', title: 'Smart LED Ambient Light Bar', price: '$45.50', image: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=400&q=80', category: 'Household', affiliateUrl: 'https://amazon.com' },
-      { id: 'b1', title: 'The 2026 Guide to Digital Nomadism', price: '$12.99', image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80', category: 'E-books', affiliateUrl: 'https://clickbank.com' },
-      { id: 'a2', title: 'Weighted Deep Sleep Mask', price: '$22.00', image: 'https://images.unsplash.com/photo-1517404212738-15263e9f9178?auto=format&fit=crop&w=400&q=80', category: 'Health', affiliateUrl: 'https://amazon.com' },
-    ];
+  // Map our categories to eBay search queries
+  const queryMap = {
+    'All': 'trending',
+    'Health': 'health and beauty',
+    'Electronics': 'gadgets electronics',
+    'Household': 'home decor kitchen',
+    'E-books': 'ebooks'
+  };
+
+  const query = queryMap[category] || 'trending';
+  
+  try {
+    const response = await axios.get(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=${query}&limit=10`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'X-EBAY-C-ENDUSERCTX': `affiliateCampaignId=${process.env.EBAY_CAMPAIGN_ID}`
+      }
+    });
+
+    return (response.data.itemSummaries || []).map(item => ({
+      id: item.itemId,
+      title: item.title,
+      price: `${item.price.currency} ${item.price.value}`,
+      image: item.image?.imageUrl || 'https://via.placeholder.com/400',
+      category: category === 'All' ? 'Electronics' : category, // Default mapping
+      affiliateUrl: item.itemAffiliateWebUrl || item.itemWebUrl,
+      source: 'ebay'
+    }));
+  } catch (error) {
+    console.error('Error fetching eBay products:', error.response?.data || error.message);
+    return [];
+  }
+}
+
+/**
+ * Manual System: Reads the JSON file for Amazon/ClickBank products
+ */
+function getManualProducts() {
+  try {
+    if (fs.existsSync(MANUAL_PRODUCTS_PATH)) {
+      const raw = fs.readFileSync(MANUAL_PRODUCTS_PATH);
+      return JSON.parse(raw);
+    }
+  } catch (error) {
+    console.error('Error reading manual products:', error);
+  }
+  return [];
+}
+
+async function fetchTrendingProducts(category = 'All') {
+  console.log(`Updating product feed for: ${category}`);
+  
+  const manual = getManualProducts();
+  let live = [];
+
+  // Only attempt eBay if keys are present
+  if (process.env.EBAY_API_KEY && process.env.EBAY_API_SECRET && process.env.EBAY_CAMPAIGN_ID) {
+    live = await fetchEbayProducts(category);
+  } else {
+    console.log('eBay credentials missing. Skipping live fetch.');
   }
 
-  // Real logic would go here:
-  // const amazonData = await fetchAmazonTrending();
-  // const ebayData = await fetchEbayTrending();
-  // return [...amazonData, ...ebayData];
-  return []; 
+  // Combine and shuffle slightly
+  return [...manual, ...live].sort(() => Math.random() - 0.5);
 }
 
 app.get('/api/products', async (req, res) => {
-  const { category } = req.query;
+  const { category = 'All' } = req.query;
   
-  // Update cache if empty or older than 1 hour
-  if (!productCache.lastUpdated || (Date.now() - productCache.lastUpdated > 3600000)) {
-    productCache.data = await fetchTrendingProducts();
+  // For this hybrid setup, we'll fetch fresh if it's been more than 15 mins
+  // or if we don't have data for this specific category yet
+  if (!productCache.lastUpdated || (Date.now() - productCache.lastUpdated > 900000)) {
+    productCache.data = await fetchTrendingProducts(category);
     productCache.lastUpdated = Date.now();
   }
 
@@ -66,6 +132,6 @@ app.get('/api/products', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Automation server running on port ${PORT}`);
-  console.log(`Primary Domain: youwantitwegotit.online`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Hybrid Mode: Manual JSON + eBay API active.`);
 });
