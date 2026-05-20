@@ -58,10 +58,15 @@ async function fetchEbayProducts(category) {
   // Map our categories to eBay search queries
   const queryMap = {
     'All': 'trending gadgets 2026',
-    'Health': 'health beauty wellness',
-    'Electronics': 'tech gadgets electronics',
-    'Household': 'smart home kitchen appliances',
-    'E-books': 'best seller ebooks'
+    'Health & Wellness': 'health beauty wellness',
+    'Electronics/Gadgets': 'tech gadgets electronics',
+    'Household Goods': 'smart home kitchen appliances',
+    'Furniture/Lawn & Garden': 'furniture garden patio decor',
+    'Toys': 'toys games collectibles',
+    'Mens Apparel': 'mens clothing fashion accessories',
+    'Womens Apparel': 'womens clothing fashion accessories',
+    'Shade': 'sunglasses patio shades window treatments',
+    'E-books': 'best seller ebooks fiction non-fiction'
   };
 
   const query = queryMap[category] || 'trending';
@@ -137,6 +142,39 @@ app.get('/api/products', async (req, res) => {
   } catch (error) {
     console.error('API Error:', error);
     res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
+/**
+ * SendShark Subscription Route
+ */
+app.post('/api/subscribe', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  const apiKey = process.env.SENDSHARK_API_KEY;
+  const campaignId = process.env.SENDSHARK_CAMPAIGN_ID;
+
+  if (!apiKey || !campaignId) {
+    console.error('SendShark configuration missing');
+    return res.status(500).json({ error: 'Mailing list configuration is incomplete.' });
+  }
+
+  try {
+    // SendShark API call (based on common GVO/SendShark API patterns)
+    await axios.post('https://www.sendshark.com/api/v1/subscribers', {
+      api_key: apiKey,
+      campaign_id: campaignId,
+      email: email
+    });
+
+    res.json({ message: 'Successfully subscribed!' });
+  } catch (error) {
+    console.error('SendShark Subscription Error:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to subscribe. Please try again later.' });
   }
 });
 
